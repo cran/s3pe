@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Get started with s3pe</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Get started with s3pe</h1>
+
+
+
+<p>An S3-compatible object store (AWS S3, MinIO, Garage, Ceph, …) is a
+good place to publish data for analysts: a bucket per project, a key
+pair that reads it and sometimes writes it. <code>s3pe</code> is the
+client: nine verbs that move R objects and files in and out, with every
+request signed, retried on transient failures and verified against the
+server’s checksum.</p>
+<p>This vignette is not evaluated: a store needs an endpoint and
+credentials.</p>
+<div id="configuration" class="section level2">
+<h2>Configuration</h2>
+<p>Put the endpoint and the key pair in <code>~/.Renviron</code> and
+restart R. <code>S3PE_BUCKET</code> is the bucket used when you do not
+say which one.</p>
+<pre><code>S3PE_ENDPOINT=https://example.org
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+S3PE_BUCKET=my-bucket</code></pre>
+<p>For one session, <code>use_endpoint()</code> and
+<code>use_bucket()</code> do the same. <code>s3_config()</code> shows
+what the package resolved (the secret is never printed). Every verb
+takes a <code>config</code> argument, so you can also build one
+explicitly, for another store or another key:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(s3pe)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">s3_config</span>()</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>cfg <span class="ot">&lt;-</span> <span class="fu">s3_config</span>(<span class="at">endpoint =</span> <span class="st">&quot;https://example.org&quot;</span>, <span class="at">bucket =</span> <span class="st">&quot;archive&quot;</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>                 <span class="at">access_key =</span> <span class="fu">Sys.getenv</span>(<span class="st">&quot;ARCHIVE_KEY&quot;</span>),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>                 <span class="at">secret_key =</span> <span class="fu">Sys.getenv</span>(<span class="st">&quot;ARCHIVE_SECRET&quot;</span>))</span></code></pre></div>
+<p>Keys are either relative to the bucket or full
+<code>s3://bucket/key</code> URLs; the URL wins.</p>
+</div>
+<div id="reading" class="section level2">
+<h2>Reading</h2>
+<p><code>read_s3()</code> chooses the reader by the key’s extension:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># JSON -&gt; list</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>meta <span class="ot">&lt;-</span> <span class="fu">read_s3</span>(<span class="st">&quot;data/manifest.json&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>meta<span class="sc">$</span>generated_at</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co"># gzipped CSV -&gt; tibble (readr); `...` reaches the reader</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>sales <span class="ot">&lt;-</span> <span class="fu">read_s3</span>(<span class="st">&quot;series/sales.csv.gz&quot;</span>, <span class="at">col_types =</span> <span class="st">&quot;Dncl&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co"># GeoJSON -&gt; sf, when sf is installed</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>regions <span class="ot">&lt;-</span> <span class="fu">read_s3</span>(<span class="st">&quot;data/regions.geojson&quot;</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co"># Parquet -&gt; data frame (nanoparquet)</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>panel <span class="ot">&lt;-</span> <span class="fu">read_s3</span>(<span class="st">&quot;etl/panel.parquet&quot;</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co"># anything else -&gt; raw bytes; or ask for them</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>png <span class="ot">&lt;-</span> <span class="fu">read_s3</span>(<span class="st">&quot;report/figure1.png&quot;</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>txt <span class="ot">&lt;-</span> <span class="fu">read_s3</span>(<span class="st">&quot;data/manifest.json&quot;</span>, <span class="at">format =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
+<p>A good publisher uploads a manifest last. If
+<code>manifest.json</code> says the batch is 2026-08, every file of that
+batch is already there: read it first and use it as the version of what
+you cache.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>cache <span class="ot">&lt;-</span> <span class="st">&quot;batch-cache.rds&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>meta <span class="ot">&lt;-</span> <span class="fu">read_s3</span>(<span class="st">&quot;data/manifest.json&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(cache) <span class="sc">||</span> <span class="fu">readRDS</span>(cache)<span class="sc">$</span>generated_at <span class="sc">!=</span> meta<span class="sc">$</span>generated_at) {</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  batch <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>    <span class="at">generated_at =</span> meta<span class="sc">$</span>generated_at,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>    <span class="at">series =</span> <span class="fu">read_s3</span>(<span class="st">&quot;data/series.json&quot;</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>    <span class="at">ranking =</span> <span class="fu">read_s3</span>(<span class="st">&quot;data/ranking.json&quot;</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  )</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="fu">saveRDS</span>(batch, cache)</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="writing" class="section level2">
+<h2>Writing</h2>
+<p><code>write_s3()</code> is the reverse: the extension decides the
+format and the content type.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">write_s3</span>(panel, <span class="st">&quot;report/panel.parquet&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">write_s3</span>(panel, <span class="st">&quot;report/panel.csv.gz&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">write_s3</span>(<span class="fu">list</span>(<span class="at">generated_at =</span> <span class="fu">Sys.time</span>(), <span class="at">rows =</span> <span class="fu">nrow</span>(panel)),</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>         <span class="st">&quot;report/manifest.json&quot;</span>, <span class="at">pretty =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">write_s3</span>(model, <span class="st">&quot;report/model.rds&quot;</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="fu">write_s3</span>(<span class="fu">c</span>(<span class="st">&quot;# Report&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="st">&quot;Text...&quot;</span>), <span class="st">&quot;report/README.md&quot;</span>)</span></code></pre></div>
+<p>Upload the data first, the manifest last: readers that follow the
+convention above will then never see a half-written batch.</p>
+</div>
+<div id="files" class="section level2">
+<h2>Files</h2>
+<p><code>upload_s3()</code> and <code>download_s3()</code> move files
+without reading them into R. A key ending in <code>/</code> gets the
+file’s name appended; downloads are written to a <code>.s3pe-part</code>
+file and renamed when complete and verified.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">upload_s3</span>(<span class="st">&quot;output/figure1.png&quot;</span>, <span class="st">&quot;report/&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">download_s3</span>(<span class="st">&quot;data/regions.geojson&quot;</span>, <span class="st">&quot;data/regions.geojson&quot;</span>, <span class="at">overwrite =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+<div id="the-rest-of-the-bucket" class="section level2">
+<h2>The rest of the bucket</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">list_s3</span>(<span class="st">&quot;data/&quot;</span>)                   <span class="co"># tibble: key, size, last_modified, etag</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">head_s3</span>(<span class="st">&quot;data/manifest.json&quot;</span>)      <span class="co"># one row, or NULL</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">exists_s3</span>(<span class="st">&quot;data/manifest.json&quot;</span>)    <span class="co"># TRUE/FALSE</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">delete_s3</span>(<span class="st">&quot;report/draft.csv&quot;</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">buckets_s3</span>()</span></code></pre></div>
+</div>
+<div id="big-files-sharing-and-sync" class="section level2">
+<h2>Big files, sharing and sync</h2>
+<p>Bodies above 64 MiB are uploaded in parts, with every part’s ETag
+checked and the whole upload aborted on failure;
+<code>s3_config(multipart_threshold =, part_size =)</code> tune it.
+<code>metadata =</code> stores user metadata with the object
+(<code>head_s3()</code> returns it) and <code>headers =</code> sends any
+extra header.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">upload_s3</span>(<span class="st">&quot;exports/full.parquet&quot;</span>, <span class="st">&quot;archive/&quot;</span>, <span class="at">bucket =</span> <span class="st">&quot;my-bucket&quot;</span>,</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>          <span class="at">metadata =</span> <span class="fu">c</span>(<span class="at">run =</span> <span class="st">&quot;2026-10-23&quot;</span>))</span></code></pre></div>
+<p>A pre-signed URL lets someone without credentials read (or write) one
+object for a while:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">presign_s3</span>(<span class="st">&quot;reports/report.pdf&quot;</span>, <span class="at">bucket =</span> <span class="st">&quot;my-bucket&quot;</span>, <span class="at">expires =</span> <span class="dv">3600</span>)</span></code></pre></div>
+<p><code>sync_up_s3()</code> and <code>sync_down_s3()</code> mirror a
+directory and a prefix, moving only what differs (size and ETag).
+<code>last</code> uploads a manifest after everything else, so readers
+who check the manifest first never see a half-published batch;
+<code>delete = TRUE</code> removes extras on the destination.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">sync_up_s3</span>(<span class="st">&quot;output/&quot;</span>, <span class="st">&quot;reports/2026/&quot;</span>, <span class="at">bucket =</span> <span class="st">&quot;my-bucket&quot;</span>, <span class="at">last =</span> <span class="st">&quot;manifest.json&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">sync_down_s3</span>(<span class="st">&quot;reports/2026/&quot;</span>, <span class="st">&quot;reports-2026/&quot;</span>, <span class="at">bucket =</span> <span class="st">&quot;my-bucket&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">copy_s3</span>(<span class="st">&quot;reports/2026/manifest.json&quot;</span>, <span class="st">&quot;reports/latest.json&quot;</span>, <span class="at">bucket =</span> <span class="st">&quot;my-bucket&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="fu">delete_s3</span>(<span class="fu">list_s3</span>(<span class="st">&quot;tmp/&quot;</span>, <span class="at">bucket =</span> <span class="st">&quot;my-bucket&quot;</span>)<span class="sc">$</span>key, <span class="at">bucket =</span> <span class="st">&quot;my-bucket&quot;</span>)</span></code></pre></div>
+</div>
+<div id="when-things-go-wrong" class="section level2">
+<h2>When things go wrong</h2>
+<p>Every failure is an error with a class, so a pipeline stops by
+default and you can catch exactly what you expect:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>meta <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  <span class="fu">read_s3</span>(<span class="st">&quot;data/manifest.json&quot;</span>),</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">s3pe_error_not_found =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>)</span></code></pre></div>
+<ul>
+<li><code>s3pe_error_config</code>: no endpoint, no credentials, no
+bucket.</li>
+<li><code>s3pe_error_not_found</code> (404),
+<code>s3pe_error_access</code> (403), <code>s3pe_error_http</code>
+(other statuses, with <code>$status</code> and <code>$code</code>).</li>
+<li><code>s3pe_error_transport</code>: the server could not be reached,
+after three attempts with a 1 s and a 2 s pause.</li>
+<li><code>s3pe_error_integrity</code>: the bytes that arrived are not
+the bytes that were sent.</li>
+</ul>
+<p>Transfers print one line each
+(<code>↑ s3://my-bucket/report/panel.parquet (12.3 MB, 0.8 s)</code>);
+silence them with <code>options(s3pe.quiet = TRUE)</code> or
+<code>S3PE_QUIET=1</code>.</p>
+</div>
+<div id="a-local-store" class="section level2">
+<h2>A local store</h2>
+<p>Inside the machine that hosts the store, or against a MinIO or Garage
+started for development, point the session at it:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">use_endpoint</span>(<span class="st">&quot;http://127.0.0.1:9000&quot;</span>)</span></code></pre></div>
+</div>
+<div id="other-editions" class="section level2">
+<h2>Other editions</h2>
+<p>The same verbs exist in Python (<code>pip install s3pe</code>), Rust
+(<code>cargo install s3pe</code>, with the <code>s3pe</code> command
+line) and Go (<code>go get github.com/StrategicProjects/s3pe</code>).
+They share one specification and one test vector, so a key written by
+one is read by the others.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

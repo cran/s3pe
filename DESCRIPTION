@@ -1,0 +1,55 @@
+Package: s3pe
+Title: A Small, Dependable Client for S3 Object Stores
+Version: 0.3.0
+Authors@R: c(
+    person("André", "Leite", email = "leite@castlab.org", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-4718-9766")),
+    person("Marcos", "Wasiliew", email = "marcos.wasiliew@gmail.com", role = "aut",
+           comment = c(ORCID = "0009-0004-4694-3159")),
+    person("Hugo", "Vasconcelos", email = "hugo.vasconcelos@ufpe.br", role = "aut",
+           comment = c(ORCID = "0000-0001-6249-0920")),
+    person("Carlos", "Amorim", email = "carlos.agaf@ufpe.br", role = "aut",
+           comment = c(ORCID = "0000-0001-6315-8305")),
+    person("Diogo", "Bezerra", email = "diogo.bezerra@ufpe.br", role = "aut",
+           comment = c(ORCID = "0000-0002-1216-8674")),
+    person("Júlia", "Nascimento Barreto",
+           email = "juliabarreto@gd.seplag.pe.gov.br", role = "aut",
+           comment = c(ORCID = "0009-0004-2851-7770"))
+  )
+Description: Read and write data on any S3-compatible object store
+    ('AWS S3', 'MinIO', 'Garage', 'Ceph', ...). read_s3() and write_s3()
+    move data frames, lists and files, with the format chosen by the
+    key's extension ('CSV', 'JSON', 'Parquet', 'RDS', 'GeoJSON'); list,
+    inspect and delete objects with the same small vocabulary. Requests
+    are signed with AWS Signature Version 4 over the real hash of the
+    payload, transient failures are retried with exponential backoff, and
+    every transfer is checked against the server's ETag and content
+    length. Endpoint and credentials come from the environment and are
+    never written to disk.
+License: MIT + file LICENSE
+URL: https://github.com/StrategicProjects/s3pe,
+        https://strategicprojects.github.io/s3pe/r/
+BugReports: https://github.com/StrategicProjects/s3pe/issues
+Depends: R (>= 4.1)
+Imports: cli, httr2 (>= 1.0.0), jsonlite, openssl, readr, rlang (>=
+        1.1.0), tibble
+Suggests: knitr, nanoparquet, readxl, rmarkdown, sf, testthat (>=
+        3.0.0), withr
+VignetteBuilder: knitr
+Config/Needs/website: tidyverse/tidytemplate, pkgdown
+Config/testthat/edition: 3
+Encoding: UTF-8
+Language: en-US
+Config/roxygen2/version: 8.0.0
+NeedsCompilation: no
+Packaged: 2026-10-24 01:02:58 UTC; leite
+Author: André Leite [aut, cre] (ORCID: <https://orcid.org/0000-0002-4718-9766>),
+  Marcos Wasiliew [aut] (ORCID: <https://orcid.org/0009-0004-4694-3159>),
+  Hugo Vasconcelos [aut] (ORCID: <https://orcid.org/0000-0001-6249-0920>),
+  Carlos Amorim [aut] (ORCID: <https://orcid.org/0000-0001-6315-8305>),
+  Diogo Bezerra [aut] (ORCID: <https://orcid.org/0000-0002-1216-8674>),
+  Júlia Nascimento Barreto [aut] (ORCID:
+    <https://orcid.org/0009-0004-2851-7770>)
+Maintainer: André Leite <leite@castlab.org>
+Repository: CRAN
+Date/Publication: 2026-11-07 17:30:02 UTC

@@ -1,0 +1,201 @@
+---
+title: "Get started with s3pe"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Get started with s3pe}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+An S3-compatible object store (AWS S3, MinIO, Garage, Ceph, ...) is a
+good place to publish data for analysts: a bucket per project, a key pair
+that reads it and sometimes writes it. `s3pe` is the client: nine verbs
+that move R objects and files in and out, with every request signed,
+retried on transient failures and verified against the server's
+checksum.
+
+This vignette is not evaluated: a store needs an endpoint and
+credentials.
+
+## Configuration
+
+Put the endpoint and the key pair in `~/.Renviron` and restart R.
+`S3PE_BUCKET` is the bucket used when you do not say which one.
+
+```
+S3PE_ENDPOINT=https://example.org
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+S3PE_BUCKET=my-bucket
+```
+
+For one session, `use_endpoint()` and `use_bucket()` do the same.
+`s3_config()` shows what the package resolved (the secret is never
+printed). Every verb takes a `config` argument, so you can also build one
+explicitly, for another store or another key:
+
+```{r}
+library(s3pe)
+s3_config()
+
+cfg <- s3_config(endpoint = "https://example.org", bucket = "archive",
+                 access_key = Sys.getenv("ARCHIVE_KEY"),
+                 secret_key = Sys.getenv("ARCHIVE_SECRET"))
+```
+
+Keys are either relative to the bucket or full `s3://bucket/key` URLs; the
+URL wins.
+
+## Reading
+
+`read_s3()` chooses the reader by the key's extension:
+
+```{r}
+# JSON -> list
+meta <- read_s3("data/manifest.json")
+meta$generated_at
+
+# gzipped CSV -> tibble (readr); `...` reaches the reader
+sales <- read_s3("series/sales.csv.gz", col_types = "Dncl")
+
+# GeoJSON -> sf, when sf is installed
+regions <- read_s3("data/regions.geojson")
+
+# Parquet -> data frame (nanoparquet)
+panel <- read_s3("etl/panel.parquet")
+
+# anything else -> raw bytes; or ask for them
+png <- read_s3("report/figure1.png")
+txt <- read_s3("data/manifest.json", format = "text")
+```
+
+A good publisher uploads a manifest last. If `manifest.json` says the
+batch is 2026-08, every file of that batch is already there: read it
+first and use it as the version of what you cache.
+
+```{r}
+cache <- "batch-cache.rds"
+meta <- read_s3("data/manifest.json")
+if (!file.exists(cache) || readRDS(cache)$generated_at != meta$generated_at) {
+  batch <- list(
+    generated_at = meta$generated_at,
+    series = read_s3("data/series.json"),
+    ranking = read_s3("data/ranking.json")
+  )
+  saveRDS(batch, cache)
+}
+```
+
+## Writing
+
+`write_s3()` is the reverse: the extension decides the format and the
+content type.
+
+```{r}
+write_s3(panel, "report/panel.parquet")
+write_s3(panel, "report/panel.csv.gz")
+write_s3(list(generated_at = Sys.time(), rows = nrow(panel)),
+         "report/manifest.json", pretty = TRUE)
+write_s3(model, "report/model.rds")
+write_s3(c("# Report", "", "Text..."), "report/README.md")
+```
+
+Upload the data first, the manifest last: readers that follow the
+convention above will then never see a half-written batch.
+
+## Files
+
+`upload_s3()` and `download_s3()` move files without reading them into R.
+A key ending in `/` gets the file's name appended; downloads are written
+to a `.s3pe-part` file and renamed when complete and verified.
+
+```{r}
+upload_s3("output/figure1.png", "report/")
+download_s3("data/regions.geojson", "data/regions.geojson", overwrite = TRUE)
+```
+
+## The rest of the bucket
+
+```{r}
+list_s3("data/")                   # tibble: key, size, last_modified, etag
+head_s3("data/manifest.json")      # one row, or NULL
+exists_s3("data/manifest.json")    # TRUE/FALSE
+delete_s3("report/draft.csv")
+buckets_s3()
+```
+
+## Big files, sharing and sync
+
+Bodies above 64 MiB are uploaded in parts, with every part's ETag checked
+and the whole upload aborted on failure; `s3_config(multipart_threshold =,
+part_size =)` tune it. `metadata =` stores user metadata with the object
+(`head_s3()` returns it) and `headers =` sends any extra header.
+
+```{r}
+upload_s3("exports/full.parquet", "archive/", bucket = "my-bucket",
+          metadata = c(run = "2026-10-23"))
+```
+
+A pre-signed URL lets someone without credentials read (or write) one
+object for a while:
+
+```{r}
+presign_s3("reports/report.pdf", bucket = "my-bucket", expires = 3600)
+```
+
+`sync_up_s3()` and `sync_down_s3()` mirror a directory and a prefix,
+moving only what differs (size and ETag). `last` uploads a manifest after
+everything else, so readers who check the manifest first never see a
+half-published batch; `delete = TRUE` removes extras on the destination.
+
+```{r}
+sync_up_s3("output/", "reports/2026/", bucket = "my-bucket", last = "manifest.json")
+sync_down_s3("reports/2026/", "reports-2026/", bucket = "my-bucket")
+copy_s3("reports/2026/manifest.json", "reports/latest.json", bucket = "my-bucket")
+delete_s3(list_s3("tmp/", bucket = "my-bucket")$key, bucket = "my-bucket")
+```
+
+## When things go wrong
+
+Every failure is an error with a class, so a pipeline stops by default
+and you can catch exactly what you expect:
+
+```{r}
+meta <- tryCatch(
+  read_s3("data/manifest.json"),
+  s3pe_error_not_found = function(e) NULL
+)
+```
+
+- `s3pe_error_config`: no endpoint, no credentials, no bucket.
+- `s3pe_error_not_found` (404), `s3pe_error_access` (403),
+  `s3pe_error_http` (other statuses, with `$status` and `$code`).
+- `s3pe_error_transport`: the server could not be reached, after three
+  attempts with a 1 s and a 2 s pause.
+- `s3pe_error_integrity`: the bytes that arrived are not the bytes that
+  were sent.
+
+Transfers print one line each (`↑ s3://my-bucket/report/panel.parquet
+(12.3 MB, 0.8 s)`); silence them with `options(s3pe.quiet = TRUE)` or
+`S3PE_QUIET=1`.
+
+## A local store
+
+Inside the machine that hosts the store, or against a MinIO or Garage
+started for development, point the session at it:
+
+```{r}
+use_endpoint("http://127.0.0.1:9000")
+```
+
+## Other editions
+
+The same verbs exist in Python (`pip install s3pe`), Rust
+(`cargo install s3pe`, with the `s3pe` command line) and Go
+(`go get github.com/StrategicProjects/s3pe`). They share one
+specification and one test vector, so a key written by one is read by
+the others.
